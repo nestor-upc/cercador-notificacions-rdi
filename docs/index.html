@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cercador de notificacions R+D+I · UPC</title>
+<meta name="robots" content="noindex">
+<style>
+  :root{
+    --blau-upc:#0076cf;      /* Pantone 2195, manual UPC 2026 */
+    --blau-rdi:#003a70;      /* paleta pròpia kit RDI */
+    --taronja:#ef9f27;       /* accent kit RDI: sempre amb text negre */
+    --negre:#000;
+    --gris:#5b6470;
+    --linia:#d9dee4;
+    --fons-suau:#f3f6f9;
+    color-scheme: light;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:#fff;color:var(--negre)}
+  body{font-family:"Helvetica Neue",Helvetica,Arial,Roboto,sans-serif;font-size:15px;line-height:1.45}
+  .cercador{max-width:960px;margin:0 auto;padding:20px 16px 28px}
+  .capcalera h1{font-size:1.45rem;line-height:1.2;margin:0 0 4px;color:var(--blau-rdi);font-weight:700}
+  .capcalera p{margin:0 0 16px;color:var(--gris)}
+  .capcalera::after{content:"";display:block;width:56px;height:4px;background:var(--taronja);margin:0 0 18px}
+  body.compacte .capcalera{display:none}
+
+  .camp{position:relative;margin-bottom:14px}
+  .camp label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .camp input{width:100%;font:inherit;font-size:1rem;padding:11px 40px 11px 14px;border:1px solid #9aa4af;border-radius:4px;background:#fff;color:var(--negre)}
+  .camp input:focus{outline:3px solid var(--blau-upc);outline-offset:1px;border-color:var(--blau-upc)}
+  .camp button{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:transparent;font-size:1.3rem;line-height:1;color:var(--gris);cursor:pointer;padding:4px 8px;display:none}
+  .camp.ple button{display:block}
+
+  .filtres{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px;padding:0;list-style:none}
+  body.sense-filtres .filtres{display:none}
+  .xip{font:inherit;font-size:.86rem;border:1px solid var(--linia);background:#fff;color:var(--blau-rdi);border-radius:999px;padding:5px 11px;cursor:pointer;white-space:nowrap}
+  .xip:hover{border-color:var(--blau-upc)}
+  .xip:focus-visible{outline:3px solid var(--blau-upc);outline-offset:1px}
+  .xip[aria-pressed="true"]{background:var(--blau-upc);border-color:var(--blau-upc);color:#fff}
+  .xip .n{opacity:.7;margin-left:4px;font-variant-numeric:tabular-nums}
+
+  .estat{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:.88rem;color:var(--gris);border-bottom:1px solid var(--linia);padding-bottom:8px;margin-bottom:4px}
+  .estat button{font:inherit;border:0;background:none;color:var(--blau-upc);cursor:pointer;padding:0;text-decoration:underline}
+
+  ol.resultats{list-style:none;margin:0;padding:0}
+  .item{display:grid;grid-template-columns:11.5em 1fr;gap:4px 12px;padding:11px 2px;border-bottom:1px solid var(--linia)}
+  .item .emissor{grid-row:span 2;align-self:start;font-size:.74rem;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:var(--blau-rdi);background:var(--fons-suau);border-left:3px solid var(--blau-rdi);padding:3px 7px}
+  .item a{color:var(--negre);text-decoration:none;font-weight:600}
+  .item a:hover,.item a:focus{color:var(--blau-upc);text-decoration:underline}
+  .item a:focus-visible{outline:3px solid var(--blau-upc);outline-offset:2px}
+  .item .meta{font-size:.8rem;color:var(--gris)}
+  mark{background:rgba(239,159,39,.35);color:inherit;padding:0 1px}
+  .buit{padding:28px 4px;color:var(--gris)}
+  .mes{display:block;margin:16px auto 0;font:inherit;border:1px solid var(--blau-upc);color:var(--blau-upc);background:#fff;border-radius:4px;padding:8px 18px;cursor:pointer}
+  .mes:hover{background:var(--blau-upc);color:#fff}
+  .peu{margin-top:18px;font-size:.78rem;color:var(--gris)}
+  .peu a{color:var(--blau-upc)}
+
+  @media (max-width:560px){
+    .item{grid-template-columns:1fr}
+    .item .emissor{grid-row:auto;justify-self:start}
+  }
+</style>
+</head>
+<body>
+<main class="cercador">
+  <header class="capcalera">
+    <h1>Cercador de notificacions R+D+I</h1>
+    <p>Totes les notificacions enviades per l'Àrea de Recerca i Transferència i els seus serveis. Cerca per paraules o filtra per emissor.</p>
+  </header>
+
+  <div class="camp" id="camp">
+    <label for="q">Cerca a les notificacions</label>
+    <input id="q" type="search" placeholder="Cerca: PID2026, ALECTORS, Horizon Europe…" autocomplete="off">
+    <button type="button" id="esborra" aria-label="Esborra la cerca">×</button>
+  </div>
+
+  <ul class="filtres" id="filtres" aria-label="Filtra per emissor"></ul>
+
+  <div class="estat">
+    <span id="recompte" aria-live="polite">Carregant…</span>
+    <button type="button" id="reinicia" hidden>Treu els filtres</button>
+  </div>
+
+  <ol class="resultats" id="resultats"></ol>
+  <button type="button" class="mes" id="mes" hidden>Mostra'n més</button>
+
+  <p class="peu" id="peu"></p>
+</main>
+
+<script>
+(function(){
+  "use strict";
+  var PAS = 30;
+  var dades = null, emissors = {}, seleccio = new Set(), limit = PAS;
+  var $ = function(id){ return document.getElementById(id); };
+  var q = $("q");
+
+  function plega(t){ return (t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); }
+  function esc(t){ return String(t).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]; }); }
+
+  // Ressalta els termes de cerca sense dependre dels accents
+  function ressalta(text, termes){
+    if (!termes.length) return esc(text);
+    var pl = plega(text), marques = new Array(text.length).fill(false);
+    termes.forEach(function(t){
+      var i = 0;
+      while ((i = pl.indexOf(t, i)) !== -1){ for (var k = i; k < i + t.length; k++) marques[k] = true; i += t.length; }
+    });
+    var out = "", obert = false;
+    for (var j = 0; j < text.length; j++){
+      if (marques[j] && !obert){ out += "<mark>"; obert = true; }
+      if (!marques[j] && obert){ out += "</mark>"; obert = false; }
+      out += esc(text[j]);
+    }
+    return out + (obert ? "</mark>" : "");
+  }
+
+  function llegeixParametres(){
+    var p = new URLSearchParams(location.search);
+    var em = (p.get("emissor") || location.hash.replace(/^#/, "") || "").split(",").filter(Boolean);
+    em.forEach(function(e){ if (emissors[e]) seleccio.add(e); });
+    if (p.get("q")) q.value = p.get("q");
+    if (p.get("compacte") === "1") document.body.classList.add("compacte");
+    if (p.get("filtres") === "0") document.body.classList.add("sense-filtres");
+  }
+
+  function dibuixaFiltres(){
+    var ul = $("filtres"); ul.innerHTML = "";
+    var tots = document.createElement("li");
+    tots.innerHTML = '<button type="button" class="xip" data-id="">Tots<span class="n">' + dades.notificacions.length + '</span></button>';
+    ul.appendChild(tots);
+    dades.emissors.forEach(function(e){
+      if (!e.total) return;
+      var li = document.createElement("li");
+      li.innerHTML = '<button type="button" class="xip" data-id="' + esc(e.id) + '">' + esc(e.nom) + '<span class="n">' + e.total + '</span></button>';
+      ul.appendChild(li);
+    });
+    ul.addEventListener("click", function(ev){
+      var b = ev.target.closest("button.xip"); if (!b) return;
+      var id = b.getAttribute("data-id");
+      if (!id) seleccio.clear();
+      else if (seleccio.has(id)) seleccio.delete(id);
+      else seleccio.add(id);
+      limit = PAS; actualitza();
+    });
+  }
+
+  function actualitza(){
+    var termes = plega(q.value).split(/\s+/).filter(Boolean);
+    $("camp").classList.toggle("ple", q.value.length > 0);
+    document.querySelectorAll("#filtres .xip").forEach(function(b){
+      var id = b.getAttribute("data-id");
+      b.setAttribute("aria-pressed", id ? String(seleccio.has(id)) : String(seleccio.size === 0));
+    });
+
+    var llista = dades.notificacions.filter(function(n){
+      if (seleccio.size && !seleccio.has(n.emissor)) return false;
+      if (!termes.length) return true;
+      var hay = n._cerca;
+      return termes.every(function(t){ return hay.indexOf(t) !== -1; });
+    });
+
+    var ol = $("resultats"); ol.innerHTML = "";
+    if (!llista.length){
+      ol.innerHTML = '<li class="buit">No hi ha cap notificació que coincideixi amb la cerca.</li>';
+    }
+    llista.slice(0, limit).forEach(function(n){
+      var li = document.createElement("li"); li.className = "item";
+      li.innerHTML =
+        '<span class="emissor">' + esc(emissors[n.emissor] || "Altres") + '</span>' +
+        '<a href="' + esc(n.url) + '" target="_blank" rel="noopener">' + ressalta(n.titol, termes) + '</a>' +
+        '<span class="meta">Butlletí núm. ' + n.id + '</span>';
+      ol.appendChild(li);
+    });
+
+    var total = llista.length;
+    $("recompte").textContent = total === 1 ? "1 notificació" : total.toLocaleString("ca") + " notificacions";
+    $("mes").hidden = total <= limit;
+    $("mes").textContent = "Mostra'n més (" + Math.min(PAS, total - limit) + " de " + (total - limit) + " restants)";
+    $("reinicia").hidden = !(seleccio.size || termes.length);
+  }
+
+  function inicia(d){
+    dades = d;
+    d.emissors.forEach(function(e){ emissors[e.id] = e.nom; });
+    d.notificacions.forEach(function(n){ n._cerca = plega(n.original + " " + (emissors[n.emissor] || "")); });
+    llegeixParametres();
+    dibuixaFiltres();
+    var data = new Date(d.actualitzat);
+    $("peu").innerHTML = 'Font: <a href="' + esc(d.font) + '" target="_blank" rel="noopener">Gennews · Butlletins R+D+I</a>. ' +
+      'Última actualització: ' + esc(data.toLocaleString("ca", {dateStyle:"long", timeStyle:"short"})) + '.';
+    actualitza();
+  }
+
+  var espera;
+  q.addEventListener("input", function(){ clearTimeout(espera); espera = setTimeout(function(){ limit = PAS; actualitza(); }, 120); });
+  $("esborra").addEventListener("click", function(){ q.value = ""; q.focus(); limit = PAS; actualitza(); });
+  $("reinicia").addEventListener("click", function(){ q.value = ""; seleccio.clear(); limit = PAS; actualitza(); });
+  $("mes").addEventListener("click", function(){ limit += PAS; actualitza(); });
+
+  fetch("notificacions.json", {cache: "no-cache"})
+    .then(function(r){ if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(inicia)
+    .catch(function(){ $("recompte").textContent = "No s'han pogut carregar les notificacions."; });
+})();
+</script>
+</body>
+</html>

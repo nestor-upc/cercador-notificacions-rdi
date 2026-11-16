@@ -1,0 +1,126 @@
+{
+  "_nota": "Taula d'equivalències d'emissors. 'prefixos': expressions regulars que s'han de trobar a l'inici del títol, seguides d'un separador (|, :, -, ' I '); el prefix s'elimina del títol mostrat. 'conte': expressions que, si apareixen en qualsevol lloc del títol (i cap prefix no ha coincidit), assignen l'emissor sense retallar el títol. L'ordre de la llista és l'ordre dels botons de filtre. Les notificacions que no coincideixen amb cap regla van a 'altres'.",
+  "emissors": [
+    {
+      "id": "area-rdi",
+      "nom": "Àrea R+D+I",
+      "prefixos": [
+        "àrea (?:d'|de )?r\\+d\\+i",
+        "àrea rdi"
+      ],
+      "conte": [
+        "àrea de recerca",
+        "àrea d'r\\+d\\+i"
+      ]
+    },
+    {
+      "id": "sgeri",
+      "nom": "SGERI",
+      "prefixos": [
+        "sgeri"
+      ]
+    },
+    {
+      "id": "projectes-nacionals",
+      "nom": "Projectes nacionals",
+      "prefixos": [
+        "projectes nacionals"
+      ]
+    },
+    {
+      "id": "projectes-internacionals",
+      "nom": "Projectes internacionals",
+      "prefixos": [
+        "projectes internacionals",
+        "erasmus",
+        "eit rawmaterials"
+      ]
+    },
+    {
+      "id": "projectes-institucionals",
+      "nom": "Projectes institucionals",
+      "prefixos": [
+        "projectes institucionals"
+      ]
+    },
+    {
+      "id": "sgi",
+      "nom": "SGI",
+      "prefixos": [
+        "sgi",
+        "servei de gestió de la innovació",
+        "innovació"
+      ],
+      "conte": [
+        "indústria del coneixement"
+      ]
+    },
+    {
+      "id": "uct",
+      "nom": "UCT",
+      "prefixos": [
+        "uct"
+      ]
+    },
+    {
+      "id": "stge",
+      "nom": "STGE",
+      "prefixos": [
+        "stge"
+      ]
+    },
+    {
+      "id": "unas",
+      "nom": "UNAS",
+      "prefixos": [
+        "unas"
+      ]
+    },
+    {
+      "id": "ssri",
+      "nom": "SSRI",
+      "prefixos": [
+        "ssri"
+      ]
+    },
+    {
+      "id": "parc-upc",
+      "nom": "Parc UPC",
+      "prefixos": [
+        "parc upc"
+      ],
+      "conte": [
+        "newsletter parc upc"
+      ]
+    },
+    {
+      "id": "empren-upc",
+      "nom": "Emprèn UPC",
+      "prefixos": [
+        "emprèn upc"
+      ]
+    },
+    {
+      "id": "coffee-break",
+      "nom": "El Coffee break",
+      "prefixos": [
+        "el coffee break"
+      ]
+    },
+    {
+      "id": "teva-idea",
+      "nom": "La teva idea és ciència!",
+      "prefixos": [
+        "la teva idea és ciència!?"
+      ],
+      "conte": [
+        "la teva idea és ciència"
+      ]
+    },
+    {
+      "id": "altres",
+      "nom": "Altres",
+      "prefixos": []
+    }
+  ]
+}
