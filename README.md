@@ -35,13 +35,28 @@ data/                    instantània inicial (16/11/2026)
 
 ## Inserció al Genweb
 
+Enganxeu aquest codi en mode HTML de l'editor del Genweb:
+
 ```html
-<iframe src="https://nestor-upc.github.io/cercador-notificacions-rdi/?compacte=1"
+<iframe id="cercador-rdi"
+        src="https://nestor-upc.github.io/cercador-notificacions-rdi/?compacte=1"
         title="Cercador de notificacions R+D+I"
-        style="width:100%;height:900px;border:0"></iframe>
+        width="100%" height="1400" scrolling="no"
+        style="display:block;width:100%;min-width:100%;height:1400px;border:0;overflow:hidden"></iframe>
+<script>
+window.addEventListener("message", function (e) {
+  if (e.origin !== "https://nestor-upc.github.io" || !e.data || e.data.tipus !== "cercador-rdi") return;
+  var f = document.getElementById("cercador-rdi");
+  f.style.height = (e.data.alcada + 4) + "px";
+  if (e.data.amunt) f.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+</script>
 ```
 
-Abans d'inserir-lo, cal confirmar amb Suport Genweb que es permeten iframes de `github.io`. Si no es permeten, l'alternativa és posar un enllaç destacat a l'adreça del cercador.
+- **Ample:** amb `compacte=1`, el cercador ocupa tot l'ample de l'iframe, i `width="100%"` fa que l'iframe ocupi tota la columna de contingut.
+- **Alçada:** el cercador envia la seva alçada a la pàgina del Genweb i el petit script ajusta l'iframe. Així només queda la barra de desplaçament de la pàgina.
+- **Paginació:** en mode compacte els resultats es mostren en pàgines de 15 (es pot canviar amb `n`, p. ex. `?compacte=1&n=25`). En canviar de pàgina, la pàgina del Genweb torna a l'inici del cercador.
+- **Si el Genweb elimina el `<script>`:** l'iframe es queda a 1400 px i sense barra interna. Amb 15 resultats per pàgina, el contingut hi cap en pantalles d'ordinador. Si no hi cap, pugeu `height` (als dos llocs) o baixeu `n`.
 
 ### Paràmetres de l'adreça
 
@@ -49,7 +64,8 @@ Abans d'inserir-lo, cal confirmar amb Suport Genweb que es permeten iframes de `
 |---|---|---|
 | `emissor` | Obre el cercador ja filtrat per un o més emissors (identificadors separats per comes) | `?emissor=sgeri` · `?emissor=projectes-nacionals,projectes-internacionals` |
 | `q` | Obre el cercador amb una cerca ja feta | `?q=PID2026` |
-| `compacte=1` | Amaga el títol i el text introductori (el Genweb ja els posa) | |
+| `compacte=1` | Mode incrustat: amaga el títol i el text introductori, ocupa tot l'ample i pagina els resultats | |
+| `n` | Resultats per pàgina en mode compacte (5-100, per defecte 15) | `?compacte=1&n=25` |
 | `filtres=0` | Amaga els botons d'emissor, per a una pàgina dedicada a un sol emissor | `?emissor=sgeri&filtres=0&compacte=1` |
 
 Identificadors dels emissors: `area-rdi`, `sgeri`, `projectes-nacionals`, `projectes-internacionals`, `projectes-institucionals`, `sgi`, `uct`, `stge`, `unas`, `ssri`, `parc-upc`, `empren-upc`, `coffee-break`, `teva-idea`, `altres`.

@@ -17,6 +17,7 @@
     color-scheme: light;
   }
   *{box-sizing:border-box}
+  [hidden]{display:none !important}
   html,body{margin:0;background:#fff;color:var(--negre)}
   body{font-family:"Helvetica Neue",Helvetica,Arial,Roboto,sans-serif;font-size:15px;line-height:1.45}
   .cercador{max-width:960px;margin:0 auto;padding:20px 16px 28px}
@@ -24,6 +25,12 @@
   .capcalera p{margin:0 0 16px;color:var(--gris)}
   .capcalera::after{content:"";display:block;width:56px;height:4px;background:var(--taronja);margin:0 0 18px}
   body.compacte .capcalera{display:none}
+  /* Incrustat al Genweb: ocupa tot l'ample de l'iframe, sense marges propis */
+  body.compacte .cercador{max-width:none;padding:2px 2px 8px}
+  .paginacio{display:flex;justify-content:center;align-items:center;gap:14px;margin-top:16px;font-size:.9rem;color:var(--gris)}
+  .paginacio button{font:inherit;border:1px solid var(--blau-upc);color:var(--blau-upc);background:#fff;border-radius:4px;padding:6px 14px;cursor:pointer}
+  .paginacio button:hover:not([disabled]){background:var(--blau-upc);color:#fff}
+  .paginacio button[disabled]{border-color:var(--linia);color:#9aa4af;cursor:default}
 
   .camp{position:relative;margin-bottom:14px}
   .camp label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
@@ -85,6 +92,11 @@
 
   <ol class="resultats" id="resultats"></ol>
   <button type="button" class="mes" id="mes" hidden>Mostra'n més</button>
+  <nav class="paginacio" id="paginacio" aria-label="Pàgines de resultats" hidden>
+    <button type="button" id="anterior">‹ Anterior</button>
+    <span id="pagina"></span>
+    <button type="button" id="seguent">Següent ›</button>
+  </nav>
 
   <p class="peu" id="peu"></p>
 </main>
@@ -94,6 +106,7 @@
   "use strict";
   var PAS = 30;
   var dades = null, emissors = {}, seleccio = new Set(), limit = PAS;
+  var incrustat = false, pagina = 0;
   var $ = function(id){ return document.getElementById(id); };
   var q = $("q");
 
@@ -122,7 +135,9 @@
     var em = (p.get("emissor") || location.hash.replace(/^#/, "") || "").split(",").filter(Boolean);
     em.forEach(function(e){ if (emissors[e]) seleccio.add(e); });
     if (p.get("q")) q.value = p.get("q");
-    if (p.get("compacte") === "1") document.body.classList.add("compacte");
+    if (p.get("compacte") === "1"){ document.body.classList.add("compacte"); incrustat = true; PAS = 15; }
+    if (/^\d+$/.test(p.get("n") || "")) PAS = Math.max(5, Math.min(100, +p.get("n")));
+    limit = PAS;
     if (p.get("filtres") === "0") document.body.classList.add("sense-filtres");
   }
 
@@ -143,7 +158,7 @@
       if (!id) seleccio.clear();
       else if (seleccio.has(id)) seleccio.delete(id);
       else seleccio.add(id);
-      limit = PAS; actualitza();
+      limit = PAS; pagina = 0; actualitza();
     });
   }
 
@@ -166,7 +181,10 @@
     if (!llista.length){
       ol.innerHTML = '<li class="buit">No hi ha cap notificació que coincideixi amb la cerca.</li>';
     }
-    llista.slice(0, limit).forEach(function(n){
+    var total = llista.length, pagines = Math.max(1, Math.ceil(total / PAS));
+    if (pagina >= pagines) pagina = pagines - 1;
+    var visibles = incrustat ? llista.slice(pagina * PAS, (pagina + 1) * PAS) : llista.slice(0, limit);
+    visibles.forEach(function(n){
       var li = document.createElement("li"); li.className = "item";
       li.innerHTML =
         '<span class="emissor">' + esc(emissors[n.emissor] || "Altres") + '</span>' +
@@ -175,9 +193,12 @@
       ol.appendChild(li);
     });
 
-    var total = llista.length;
     $("recompte").textContent = total === 1 ? "1 notificació" : total.toLocaleString("ca") + " notificacions";
-    $("mes").hidden = total <= limit;
+    $("mes").hidden = incrustat || total <= limit;
+    $("paginacio").hidden = !incrustat || pagines <= 1;
+    $("pagina").textContent = "Pàgina " + (pagina + 1) + " de " + pagines;
+    $("anterior").disabled = pagina === 0;
+    $("seguent").disabled = pagina >= pagines - 1;
     $("mes").textContent = "Mostra'n més (" + Math.min(PAS, total - limit) + " de " + (total - limit) + " restants)";
     $("reinicia").hidden = !(seleccio.size || termes.length);
   }
@@ -195,10 +216,25 @@
   }
 
   var espera;
-  q.addEventListener("input", function(){ clearTimeout(espera); espera = setTimeout(function(){ limit = PAS; actualitza(); }, 120); });
-  $("esborra").addEventListener("click", function(){ q.value = ""; q.focus(); limit = PAS; actualitza(); });
-  $("reinicia").addEventListener("click", function(){ q.value = ""; seleccio.clear(); limit = PAS; actualitza(); });
+  q.addEventListener("input", function(){ clearTimeout(espera); espera = setTimeout(function(){ limit = PAS; pagina = 0; actualitza(); }, 120); });
+  $("esborra").addEventListener("click", function(){ q.value = ""; q.focus(); limit = PAS; pagina = 0; actualitza(); });
+  $("reinicia").addEventListener("click", function(){ q.value = ""; seleccio.clear(); limit = PAS; pagina = 0; actualitza(); });
   $("mes").addEventListener("click", function(){ limit += PAS; actualitza(); });
+  $("anterior").addEventListener("click", function(){ pagina--; actualitza(); envia(true); });
+  $("seguent").addEventListener("click", function(){ pagina++; actualitza(); envia(true); });
+
+  // Comunica l'alçada del contingut a la pàgina que incrusta l'iframe (Genweb),
+  // perquè pugui ajustar l'iframe i evitar la doble barra de desplaçament.
+  var darrera = 0;
+  function envia(amunt){
+    if (window.parent === window) return;
+    var h = Math.ceil(document.querySelector(".cercador").getBoundingClientRect().height);
+    if (!amunt && h === darrera) return;
+    darrera = h;
+    try { window.parent.postMessage({tipus: "cercador-rdi", alcada: h, amunt: !!amunt}, "*"); } catch (e) {}
+  }
+  if (window.ResizeObserver) new ResizeObserver(function(){ envia(false); }).observe(document.querySelector(".cercador"));
+  window.addEventListener("load", function(){ envia(false); });
 
   fetch("notificacions.json", {cache: "no-cache"})
     .then(function(r){ if (!r.ok) throw new Error(r.status); return r.json(); })
